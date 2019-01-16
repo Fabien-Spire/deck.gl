@@ -134,7 +134,7 @@ export default class IconLayer extends Layer {
       iconMappingChanged = oldProps.iconMapping !== props.iconMapping;
 
       if (oldProps.iconAtlas !== props.iconAtlas) {
-        iconManager.updateState({iconAtlas, iconMapping, data, getIcon});
+        iconManager.updateState({iconAtlas, iconMapping});
       }
 
       // auto pack iconAtlas in IconManager
@@ -143,7 +143,7 @@ export default class IconLayer extends Layer {
       changeFlags.updateTriggersChanged.all ||
       changeFlags.updateTriggersChanged.getIcon
     ) {
-      iconManager.updateState({iconAtlas, iconMapping, data, getIcon});
+      iconManager.updateState({data, getIcon});
       iconMappingChanged = true;
     }
 

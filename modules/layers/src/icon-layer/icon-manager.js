@@ -208,7 +208,6 @@ export default class IconManager {
 
         const data = resizeImage(imageData, width, height);
 
-        // update texture with image actual dimension
         this._texture.setSubImageData({
           data,
           x,
