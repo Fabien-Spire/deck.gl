@@ -15,6 +15,22 @@ function nextPowOfTwo(number) {
   return Math.pow(2, Math.ceil(Math.log2(number)));
 }
 
+// resize image to given width and height
+function resizeImage(imageData, width, height) {
+  const {naturalWidth, naturalHeight} = imageData;
+  if (width === naturalWidth && height === naturalHeight) {
+    return imageData;
+  }
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.height = height;
+  canvas.width = width;
+  // image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
+  ctx.drawImage(imageData, 0, 0, naturalWidth, naturalHeight, 0, 0, width, height);
+  return canvas;
+}
+
 // traverse icons in a row of icon atlas
 // extend each icon with left-top coordinates
 function buildRowMapping(mapping, columns, yOffset) {
@@ -187,17 +203,18 @@ export default class IconManager {
     const canvasHeight = this._texture.height;
     for (const icon of icons) {
       loadImages({urls: [icon.url]}).then(([imageData]) => {
-        const {naturalWidth, naturalHeight} = imageData;
         const iconMapping = this._mapping[icon.url];
-        const {x, y, height} = iconMapping;
+        const {x, y, width, height} = iconMapping;
+
+        const data = resizeImage(imageData, width, height);
 
         // update texture with image actual dimension
         this._texture.setSubImageData({
-          data: imageData,
+          data,
           x,
           y: canvasHeight - y - height, // flip Y as texture stored as reversed Y
-          width: naturalWidth,
-          height: naturalHeight,
+          width,
+          height,
           parameters: {
             [GL.TEXTURE_MIN_FILTER]: DEFAULT_TEXTURE_MIN_FILTER,
             [GL.TEXTURE_MAG_FILTER]: DEFAULT_TEXTURE_MAG_FILTER,

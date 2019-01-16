@@ -79,9 +79,9 @@ const IconLayerAutoPackingExample = {
       if (d.PLACEMENT === 'SW') {
         return {
           url: 'data/icon-marker.png',
-          width: 128,
-          height: 128,
-          anchorY: 128,
+          width: 64,
+          height: 64,
+          anchorY: 64,
           mask: true
         };
       }
