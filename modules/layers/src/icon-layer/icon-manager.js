@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* global document */
 import GL from '@luma.gl/constants';
 import {Texture2D, loadImages, loadTextures} from 'luma.gl';
 
@@ -16,16 +16,18 @@ function nextPowOfTwo(number) {
 }
 
 // resize image to given width and height
-function resizeImage(imageData, width, height) {
+function resizeImage(canvas, imageData, width, height) {
   const {naturalWidth, naturalHeight} = imageData;
   if (width === naturalWidth && height === naturalHeight) {
     return imageData;
   }
 
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
   canvas.height = height;
   canvas.width = width;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   // image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
   ctx.drawImage(imageData, 0, 0, naturalWidth, naturalHeight, 0, 0, width, height);
   return canvas;
@@ -122,28 +124,43 @@ export function getIcons(data, getIcon) {
 }
 
 export default class IconManager {
-  constructor(gl, onUpdate = noop) {
+  constructor(
+    gl,
+    {
+      data,
+      iconAtlas,
+      iconMapping,
+      getIcon = noop,
+      onUpdate = noop // notify IconLayer when icon texture update
+    }
+  ) {
     this.gl = gl;
     this.onUpdate = onUpdate;
+
+    this._canvas = document.createElement('canvas');
+    this.updateState({data, iconAtlas, iconMapping, getIcon});
   }
 
   getTexture() {
     return this._texture;
   }
 
-  getIconMapping(dataPoint, getIcon) {
-    const icon = getIcon(dataPoint);
+  getIconMapping(dataPoint) {
+    const icon = this.getIcon(dataPoint);
     const name = icon ? (typeof icon === 'object' ? icon.url : icon) : null;
     return this._mapping[name] || {};
   }
 
-  updateState({data, getIcon, iconAtlas, iconMapping}) {
+  updateState({data, iconAtlas, iconMapping, getIcon}) {
+    if (getIcon) {
+      this.getIcon = getIcon;
+    }
+
     if (iconAtlas) {
       this._updatePrePacked({iconAtlas, iconMapping});
     } else {
       this._updateAutoPacking({
         data,
-        getIcon,
         buffer: DEFAULT_BUFFER,
         maxCanvasWidth: MAX_CANVAS_WIDTH
       });
@@ -159,7 +176,7 @@ export default class IconManager {
       });
 
       this._texture = iconAtlas;
-      this.onUpdate({textureChanged: true});
+      this.onUpdate();
     } else if (typeof iconAtlas === 'string') {
       loadTextures(this.gl, {
         urls: [iconAtlas],
@@ -169,13 +186,13 @@ export default class IconManager {
         }
       }).then(([texture]) => {
         this._texture = texture;
-        this.onUpdate({textureChanged: true});
+        this.onUpdate();
       });
     }
   }
 
-  _updateAutoPacking({data, getIcon, buffer, maxCanvasWidth}) {
-    let icons = Object.values(getIcons(data, getIcon) || {});
+  _updateAutoPacking({data, buffer, maxCanvasWidth}) {
+    const icons = Object.values(getIcons(data, this.getIcon) || {});
     if (icons.length > 0) {
       // generate icon mapping
       const {mapping, canvasHeight} = buildMapping({
@@ -192,7 +209,7 @@ export default class IconManager {
         height: canvasHeight
       });
 
-      this.onUpdate({textureChanged: true});
+      this.onUpdate();
 
       // load images
       this._loadImages(icons);
@@ -206,7 +223,7 @@ export default class IconManager {
         const iconMapping = this._mapping[icon.url];
         const {x, y, width, height} = iconMapping;
 
-        const data = resizeImage(imageData, width, height);
+        const data = resizeImage(this._canvas, imageData, width, height);
 
         this._texture.setSubImageData({
           data,
@@ -223,7 +240,8 @@ export default class IconManager {
 
         // Call to regenerate mipmaps after modifying texture(s)
         this._texture.generateMipmap();
-        this.onUpdate({textureChanged: true});
+
+        this.onUpdate();
       });
     }
   }

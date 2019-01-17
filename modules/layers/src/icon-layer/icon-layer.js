@@ -72,7 +72,7 @@ export default class IconLayer extends Layer {
 
   initializeState() {
     this.state = {
-      iconManager: new IconManager(this.context.gl, state => this._onUpdate(state))
+      iconManager: new IconManager(this.context.gl, {onUpdate: () => this._onUpdate()})
     };
 
     const attributeManager = this.getAttributeManager();
@@ -134,7 +134,7 @@ export default class IconLayer extends Layer {
       iconMappingChanged = oldProps.iconMapping !== props.iconMapping;
 
       if (oldProps.iconAtlas !== props.iconAtlas) {
-        iconManager.updateState({iconAtlas, iconMapping});
+        iconManager.updateState({iconAtlas, iconMapping, getIcon});
       }
 
       // auto pack iconAtlas in IconManager
@@ -198,10 +198,8 @@ export default class IconLayer extends Layer {
     );
   }
 
-  _onUpdate({textureChanged}) {
-    if (textureChanged) {
-      this.setNeedsRedraw();
-    }
+  _onUpdate() {
+    this.setNeedsRedraw();
   }
 
   calculateInstancePositions64xyLow(attribute) {
@@ -224,36 +222,36 @@ export default class IconLayer extends Layer {
   }
 
   calculateInstanceOffsets(attribute) {
-    const {data, getIcon} = this.props;
+    const {data} = this.props;
     const {iconManager} = this.state;
     const {value} = attribute;
     let i = 0;
     for (const object of data) {
-      const rect = iconManager.getIconMapping(object, getIcon);
+      const rect = iconManager.getIconMapping(object);
       value[i++] = rect.width / 2 - rect.anchorX || 0;
       value[i++] = rect.height / 2 - rect.anchorY || 0;
     }
   }
 
   calculateInstanceColorMode(attribute) {
-    const {data, getIcon} = this.props;
+    const {data} = this.props;
     const {iconManager} = this.state;
     const {value} = attribute;
     let i = 0;
     for (const object of data) {
-      const mapping = iconManager.getIconMapping(object, getIcon);
+      const mapping = iconManager.getIconMapping(object);
       const colorMode = mapping.mask;
       value[i++] = colorMode ? 1 : 0;
     }
   }
 
   calculateInstanceIconFrames(attribute) {
-    const {data, getIcon} = this.props;
+    const {data} = this.props;
     const {iconManager} = this.state;
     const {value} = attribute;
     let i = 0;
     for (const object of data) {
-      const rect = iconManager.getIconMapping(object, getIcon);
+      const rect = iconManager.getIconMapping(object);
       value[i++] = rect.x || 0;
       value[i++] = rect.y || 0;
       value[i++] = rect.width || 0;

@@ -102,13 +102,12 @@ const App = ({data, viewport}) => {
     // getIcon return an object which contains url to fetch icon of each data point
     getIcon: d => ({
       url: d.avatar_url,
-      // Note: width and height need to be equal or larger than the actual icon size 
-      width: 500,
-      height: 500,
-      anchorY: 500,
+      width: 128,
+      height: 128,
+      anchorY: 128,
       mask: true
     }),
-    // icon size is based on data point's contributions, between 2 -25 
+    // icon size is based on data point's contributions, between 2 - 25 
     getSize: d => Math.max(2, Math.min(d.contributions / 1000 * 25, 25)),
 
     pickable: true,
